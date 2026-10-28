@@ -1,117 +1,91 @@
-= OpenShift Ops Day Roadshow
+= OpenShift Lightspeed Lab
 
-Showroom content for the OpenShift Ops Day Roadshow, covering Day 2 operations for OpenShift administrators.
+Showroom content for a standalone OpenShift Lightspeed lab, extracted from module 13 of the OpenShift Ops Day Roadshow.
 
-== Workshop Overview
+== Lab Content
 
-A comprehensive modular workshop for OpenShift administrators. Modules are selectable at catalog order time so instructors can tailor the content to their audience.
+* link:content/modules/ROOT/pages/index.adoc[Lab Setup] — console access, terminal access, and prerequisites.
+* link:content/modules/ROOT/pages/13-openshift-lightspeed.adoc[OpenShift Lightspeed] — configure an LLM provider, explore the assistant, generate YAML, troubleshoot a demo pod, and clean up.
 
-=== Available Modules
+Allow 20-30 minutes for the lab. Navigation is unconditional; no module selection flags are required. The original `13-openshift-lightspeed.adoc` filename is retained.
 
-*Getting Started*
+== Environment Requirements
 
-* *link:content/modules/ROOT/pages/index.adoc[Setup & Overview]* (15-20 min) - Lab access, Showroom interface, CLI verification, platform overview, console, monitoring, registry, routing, upgrades, operator ecosystem
-* *link:content/modules/ROOT/pages/01-installation.adoc[01 - Installation & Verification]* (10 min) - ClusterOperator health, node status, etcd metrics, storage provisioning, update channels
+The environment provisioning must supply:
 
-*Core Operations*
+* An OpenShift cluster with administrator access and an installed OpenShift Lightspeed Operator in `openshift-lightspeed`.
+* An `azure-api-keys` secret in `openshift-lightspeed` with credentials for the configured Azure OpenAI endpoint and `gpt-4` deployment/model.
+* Network access from the cluster to the LLM endpoint.
+* The Showroom console tab and wetty terminal service, with `oc` and `jq` available.
 
-* *link:content/modules/ROOT/pages/02-app-mgmt.adoc[02 - Application Management]* (15-20 min) - Deployment, Routes with TLS, scaling, self-healing, probes, rollback, PodDisruptionBudgets
-* *link:content/modules/ROOT/pages/03-ingress-loadbalancing.adoc[03 - Ingress & Load Balancing]* (25 min) - Ingress Controller, Routes with TLS termination, rate limiting, IP allowlist, Services
-* *link:content/modules/ROOT/pages/04-network-security.adoc[04 - Network Security]* (10-15 min) - OVN-Kubernetes, NetworkPolicy, AdminNetworkPolicy, EgressFirewall, EgressIP
-* *link:content/modules/ROOT/pages/05-debugging-troubleshooting.adoc[05 - Debugging & Troubleshooting]* (10-15 min) - Diagnostic toolkit, fixing ImagePullBackOff, CrashLoopBackOff, resource constraints, SCC permissions
-* *link:content/modules/ROOT/pages/06-gitops.adoc[06 - OpenShift GitOps]* (10-15 min) - ArgoCD, app deployment from Git, drift detection, self-healing
+The lab creates its own intentionally unschedulable pod in `lightspeed-demo`; it does not depend on another roadshow module to deploy the demo. Cluster and operator provisioning are managed outside this content repository.
 
-*Identity & Access*
+== Showroom Configuration
 
-* *link:content/modules/ROOT/pages/07-ldap-authentication.adoc[07 - LDAP Authentication]* (15-20 min) - OAuth configuration, LDAP structure, group sync, RBAC
-* *link:content/modules/ROOT/pages/08-oidc-authentication.adoc[08 - OIDC Authentication]* (15-20 min) - Red Hat build of Keycloak deployment, OIDC configuration, group sync, RBAC
+The Antora component name is `zt-ocp-ops-lightspeed` in link:content/antora.yml[content/antora.yml], both playbooks, and link:ui-config.yml[ui-config.yml].
 
-*Day 2 Operations*
+The workspace opens in split view with three tabs:
 
-* *link:content/modules/ROOT/pages/09-observability.adoc[09 - Observability & Logging]* (35-40 min) - Prometheus metrics, dashboards, user workload monitoring, Alertmanager, OpenTelemetry distributed tracing, logging stack
-* *link:content/modules/ROOT/pages/10-performance-tuning.adoc[10 - Performance Tuning]* (15-20 min) - Resource diagnostics, VPA right-sizing, HPA autoscaling, performance monitoring
+* *OCP Console* — `https://console-openshift-console.${DOMAIN}`.
+* *Terminal* — `/wetty`, port `443`, used by executable command blocks.
+* *Terminal 2* — `/wetty`, port `443`, for monitoring commands.
 
-*Advanced Topics*
+The Showroom deployment must resolve `DOMAIN` to the cluster's application route domain and supply these AsciiDoc attributes:
 
-* *link:content/modules/ROOT/pages/11-virtualization.adoc[11 - Virtualization]* (20-25 min) - VM creation, networking, live migration, cloning, snapshots
-* *link:content/modules/ROOT/pages/12-developer-hub.adoc[12 - Developer Hub]* (25-30 min) - Software catalog, Topology plugin, software templates, platform architecture
-* *link:content/modules/ROOT/pages/13-openshift-lightspeed.adoc[13 - OpenShift Lightspeed]* (15-20 min) - AI assistant, OLSConfig creation, console integration
-* *link:content/modules/ROOT/pages/14-acm.adoc[14 - ACM Multi-Cluster Management]* (30 min) - ACM, hosted control planes, VM management, GitOps app deployment, policy-based governance
-* *link:content/modules/ROOT/pages/15-acs.adoc[15 - Advanced Cluster Security]* (20 min) - Workload scanning with RHACS, compliance, runtime security
-* *link:content/modules/ROOT/pages/16-secrets-management.adoc[16 - Secrets Management (HashiCorp Vault)]* (25 min) - Vault Helm deploy on OpenShift, Kubernetes auth, pod secret injection
-* *link:content/modules/ROOT/pages/17-ztwim.adoc[17 - Zero-Trust Database Access with SPIFFE mTLS]* (45 min) - ZTWIM operator, SPIFFE/SPIRE workload identity, PostgreSQL mTLS without passwords
+* `openshift_cluster_console_url`
+* `openshift_cluster_admin_username`
+* `openshift_cluster_admin_password`
 
-== Module Selection
+`content/antora.yml` includes example connection details for static previews. Runtime deployment must override them with the actual lab values. The `ols_azure_url` attribute supplies the Azure OpenAI endpoint used in the exercise and can also be overridden.
 
-Modules are selectable at catalog order time. The navigation dynamically shows/hides content based on which modules are enabled.
-
-Catalog parameters (`module_enable_*`) control both:
-
-* Which operators/workloads get deployed
-* Which content appears in the workshop navigation
-
-See link:content/modules/ROOT/nav.adoc[nav.adoc] for the conditional navigation logic using `ifeval`.
+`site.yml` builds into `www/`; `default-site.yml` builds into `public/`. Both use the same theme and supplemental UI. A static Antora preview renders the instructions; live console and terminal tabs require the Showroom runtime and its terminal service.
 
 == Local Development
 
-=== Using local-build scripts (Recommended)
+With Antora installed, build the instructions:
 
-From the repo root, build and preview the workshop with Podman:
+[source,sh]
+----
+./local-build/build.sh
+----
+
+To build and serve with Podman:
 
 [source,sh]
 ----
 ./local-build/up.sh
 ----
 
-Open http://localhost:8080/index.html in your browser.
-
-Other commands:
+Open http://localhost:8080/index.html.
 
 [cols="1,2"]
 |===
-| `./local-build/build.sh` | Generate the static site into `./www/` using `site.yml`
-| `./local-build/serve.sh` | Serve `./www/` with httpd in Podman (port 8080)
-| `./local-build/stop.sh` | Stop the local httpd container
-| `./local-build/reset.sh` | Stop, rebuild, and serve again
-| `./local-build/status.sh` | Show container status
+|Command |Purpose
+|`./local-build/build.sh` |Generate the static site using `site.yml`.
+|`./local-build/serve.sh` |Serve the generated site with Podman.
+|`./local-build/stop.sh` |Stop the preview container.
+|`./local-build/reset.sh` |Stop, rebuild, and serve again.
+|`./local-build/status.sh` |Show preview container status.
 |===
 
-Optional environment variables (see `local-build/_common.sh`):
+Optional environment variables:
 
-* `SHOWROOM_PORT` — host port (default `8080`)
-* `SHOWROOM_PULL=1` — pull the httpd image before starting
-* `SHOWROOM_SITE_YML` — alternate Antora playbook (default `site.yml`)
+* `SHOWROOM_PORT` — host port (default `8080`).
+* `SHOWROOM_PULL=1` — pull the httpd image before starting.
+* `SHOWROOM_SITE_YML` — alternate Antora playbook (default `site.yml`).
+* `SHOWROOM_WWW` — absolute build and preview directory (default `www/` in this repo).
+* `SHOWROOM_CONTAINER_NAME` — preview container name (default `zt-ocp-ops-lightspeed-httpd`).
 
-=== Using Antora CLI directly
+To validate both playbooks directly:
 
 [source,sh]
 ----
-npm i -g @antora/cli@3.1 @antora/site-generator@3.1
-antora generate site.yml --stacktrace
+antora generate site.yml --stacktrace --log-failure-level=warn
+antora generate default-site.yml --stacktrace --log-failure-level=warn
 ----
-
-Output is generated in `./www/`. Serve with `./local-build/serve.sh` or any static file server.
 
 == Theme
 
-This workshop uses a custom theme with click-to-execute functionality:
+The lab uses https://github.com/dialvare/rhdp_showroom_theme[the RHDP Showroom theme], release `v2.0.4-ops`, with click-to-execute support for command blocks marked `role="execute"`.
 
-* Theme repo: https://github.com/jnewsome97/rhdp_showroom_theme_execute
-* Release: `rh-one-2025-execute-v4`
-
-The execute button allows code blocks with `role="execute"` to send commands directly to the wetty terminal via `socket.emit`.
-
-== Preview
-
-GitHub Pages preview: https://rhpds.github.io/openshift-days-ops-showroom/
-
-== Branches
-
-* `main` — production content, deployed to students
-* `dev` — development branch for testing changes before production
-
-== Related Repos
-
-* Automation (Ansible roles): https://github.com/rhpds/openshift-days-roadshow-automation
-* AgnosticV (Catalog config): https://github.com/rhpds/agnosticv/tree/master/agd_v2/openshift-days-ops-track-cnv
-* Execute theme (UI bundle): https://github.com/jnewsome97/rhdp_showroom_theme_execute
+The shared supplemental UI uses https://docs.antora.org/antora/3.1/playbook/ui-supplemental-files/[Antora's directory layout].

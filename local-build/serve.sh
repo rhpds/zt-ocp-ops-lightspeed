@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Serve ./www with Apache httpd in Podman for openshift-days-ops-showroom.
+# Serve ./www with Apache httpd in Podman for zt-ocp-ops-lightspeed.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -12,10 +12,9 @@ if ! command -v podman >/dev/null 2>&1; then
 fi
 
 cd "${SHOWROOM_REPO_ROOT}"
-mkdir -p www
-
-if [[ ! -f www/index.html ]] && [[ -z "$(find www -type f 2>/dev/null | head -1)" ]]; then
-  echo "WARNING: www/ looks empty. Run ${SCRIPT_DIR}/build.sh first." >&2
+if [[ ! -f "${SHOWROOM_WWW}/index.html" ]]; then
+  echo "ERROR: ${SHOWROOM_WWW}/index.html is missing. Run ${SCRIPT_DIR}/build.sh first." >&2
+  exit 1
 fi
 
 if [[ -n "${SHOWROOM_PULL:-}" ]]; then

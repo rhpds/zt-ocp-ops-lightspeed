@@ -1,18 +1,18 @@
-name: openshift-days-ops-track
-title: OpenShift Ops Day Roadshow
+name: zt-ocp-ops-lightspeed
+title: OpenShift Lightspeed
 version: main
 nav:
   - modules/ROOT/nav.adoc
 
 asciidoc:
   attributes:
-    lab_name: "OpenShift Ops Day Roadshow"
+    lab_name: OpenShift Lightspeed
     release-version: main
     page-pagination: true
-    guid: my-guid
-    ssh_user: lab-user
-    ssh_password: ''
-    ssh_command: ''
+    # Preview values; Showroom supplies the lab's actual connection details.
+    openshift_cluster_console_url: 'https://console-openshift-console.apps.example.com'
+    openshift_cluster_admin_username: 'Your lab administrator username'
+    openshift_cluster_admin_password: 'Your lab administrator password'
     ols_azure_url: 'https://llm-gpt4-lightspeed.openai.azure.com/'
     page-links:
     - url: https://docs.redhat.com/en/documentation/openshift_container_platform/4.20

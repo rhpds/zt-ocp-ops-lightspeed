@@ -1,7 +1,7 @@
 = OpenShift Lightspeed
 :page-toclevels: 1
 
-== Module Overview
+== Lab Overview
 
 **Duration:** 15-20 minutes +
 **Format:** Hands-on AI assistant exploration +
@@ -16,13 +16,15 @@ OpenShift Lightspeed (OLS) is an AI-powered assistant integrated into the OpenSh
 * Assisted YAML generation
 * Troubleshooting cluster issues
 
-In this module, you'll configure OpenShift Lightspeed and use it to understand OpenShift concepts, gather information from cluster resources, troubleshoot broken workloads and more.
+In this lab, you'll configure OpenShift Lightspeed and use it to understand OpenShift concepts, gather information from cluster resources, troubleshoot broken workloads and more.
 
 === Prerequisites
 
-The OpenShift Lightspeed Operator has been pre-installed on your cluster. However, to be fully operational, OpenShift Lightspeed must be connected to an LLM provider. In this module, you'll also create the configuration necessary to enable this connection.
+The OpenShift Lightspeed Operator has been pre-installed on your cluster. However, to be fully operational, OpenShift Lightspeed must be connected to an LLM provider. In this lab, you'll also create the configuration necessary to enable this connection.
 
 image::diagrams/13_lightspeed.png[OpenShift Lightspeed Architecture, align=center, link=self, window=blank]
+
+[[deploy-lightspeed]]
 == Deploy OpenShift Lightspeed
 
 === Verify the Operator Installation
@@ -44,7 +46,7 @@ To switch namespace, use the dropdown at the top:
 image::ols-switch-namespace.png[Switch to openshift-lightspeed namespace, link=self, window=blank]
 === Create the OLSConfig
 
-The operator is installed but needs configuration to connect to an LLM provider. OpenShift Lightspeed supports various model providers, including public cloud services (WatsonX, Azure OpenAI, OpenAI) and on-premise solutions (Red Hat OpenShift AI, RHEL AI). For this workshop, Azure OpenAI credentials have been pre-configured as a secret.
+The operator is installed but needs configuration to connect to an LLM provider. OpenShift Lightspeed supports various model providers, including public cloud services (WatsonX, Azure OpenAI, OpenAI) and on-premise solutions (Red Hat OpenShift AI, RHEL AI). For this lab, Azure OpenAI credentials have been pre-configured as a secret.
 
 Verify the credentials secret exists:
 
@@ -67,7 +69,7 @@ spec:
     providers:
       - name: Azure
         type: azure_openai
-        url: 'https://llm-gpt4-lightspeed.openai.azure.com/'
+        url: '{ols_azure_url}'
         deploymentName: gpt-4
         credentialsSecretRef:
           name: azure-api-keys
@@ -104,9 +106,15 @@ until oc get pods -n openshift-lightspeed -l app.kubernetes.io/component=applica
   sleep 10; ELAPSED=$((ELAPSED+10))
   [ $ELAPSED -ge 600 ] && echo "ERROR: Timed out after 10 minutes" && break
 done
-echo "Lightspeed is ready"
+if [ $ELAPSED -lt 600 ]; then
+  echo "Lightspeed is ready"
+fi
 oc get pods -n openshift-lightspeed
 ----
+
+If the wait times out, inspect the pod status and resolve the startup issue before continuing.
+
+To monitor startup in **Terminal 2**, run `oc get pods -n openshift-lightspeed -w` there. Press `Ctrl+C` to stop watching.
 
 You should see all pods `Running`:
 
@@ -129,6 +137,7 @@ oc get olsconfig cluster -o jsonpath='{.status.conditions}' | jq .
 
 All conditions should show `"status": "True"` and `"message": "Ready"`.
 
+[[using-lightspeed]]
 == Using Lightspeed
 
 === Access OpenShift Lightspeed in the Web Console
@@ -162,6 +171,7 @@ OpenShift Lightspeed will search for the most relevant sections of the documenta
 OpenShift Lightspeed will likely provide a response explaining what both Deployment and StatefulSet resources are, along with a comparison between them. If you scroll down to the end of the response, OpenShift Lightspeed will display links to the most relevant documentation, allowing you to quickly access those sections and explore further:
 
 image::ols-related-docs.png[Related documentation in OpenShift Lightspeed, link=self, window=blank]
+[[capabilities]]
 == Capabilities
 
 === Assisted YAML generation
@@ -178,9 +188,45 @@ Please note that OpenShift Lightspeed provides guidance and crafts the resources
 image::ols-copy-yaml.png[Copy YAML button in OpenShift Lightspeed, link=self, window=blank]
 === Cluster Interaction and Troubleshooting
 
-A demo pod with an intentional issue has been pre-deployed as part of the workshop setup. Let's use OpenShift Lightspeed to diagnose it.
+Create a demo pod with an intentional scheduling issue. Its node selector requests a label that does not exist on the lab's nodes, leaving the pod in `Pending` state for Lightspeed to diagnose.
 
-First, check the broken pod:
+If your lab environment already includes `broken-pod`, this command reuses it.
+
+[source,bash,role=execute]
+----
+if oc get pod broken-pod -n lightspeed-demo >/dev/null 2>&1; then
+  echo "Using the existing demo pod"
+else
+  oc apply -f - <<'EOF'
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: lightspeed-demo
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: broken-pod
+  namespace: lightspeed-demo
+spec:
+  nodeSelector:
+    lightspeed-demo: nonexistent-node
+  containers:
+    - name: demo
+      image: registry.access.redhat.com/ubi9/ubi-minimal:latest
+      command: ["sleep", "infinity"]
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          cpu: 100m
+          memory: 64Mi
+EOF
+fi
+----
+
+Check the broken pod:
 
 [source,bash,role=execute]
 ----
@@ -220,14 +266,15 @@ OpenShift Lightspeed will analyze the pod specification to identify the issue - 
 
 === OpenShift Lightspeed Beyond Containers
 
-Throughout this module, we've seen how OpenShift Lightspeed can assist with container-based workloads such as Pods, Deployments, Routes, Services, etc. However, the OpenShift platform extends well beyond containers.
+Throughout this lab, we've seen how OpenShift Lightspeed can assist with container-based workloads such as Pods, Deployments, Routes, Services, etc. However, the OpenShift platform extends well beyond containers.
 
 OpenShift Virtualization allows you to run virtual machines on the same platform as your containers. Since VMs in OpenShift are managed as custom resources, OpenShift Lightspeed can assist with them just as effectively. From understanding VM networking concepts to troubleshooting startup issues or generating virtual machine configurations, OpenShift Lightspeed is ready to help.
 
 The same applies to Red Hat Advanced Cluster Management (ACM). When working across multiple clusters, resources like ManagedCluster or ManagedClusterInfo follow the same custom resource pattern, making them accessible to OpenShift Lightspeed for queries and guidance.
 
-This module concludes here, but the OpenShift Lightspeed operator will stay active for the remainder of the workshop. Feel free to continue using it as you progress through the upcoming modules - whether to clarify concepts, generate resource definitions, or assist with virtualization and multi-cluster tasks, if applicable.
+These are examples for further exploration in environments with those capabilities installed. This lab focuses on the Lightspeed assistant and the demo pod; no virtualization or multi-cluster setup is required.
 
+[[cleanup-summary]]
 == Cleanup & Summary
 
 Clean up the demo namespace:
@@ -235,19 +282,19 @@ Clean up the demo namespace:
 [source,bash,role="execute"]
 ----
 oc delete namespace lightspeed-demo --ignore-not-found --wait=false
-echo "Cleanup complete - you can continue to the next module"
+echo "Demo cleanup complete"
 ----
 
-NOTE: The OLSConfig and Lightspeed service are still running. If you want to keep using Lightspeed in later modules, leave it as-is. If you want to remove it entirely, run:
+NOTE: The OLSConfig and Lightspeed service are still running. Leave them in place to continue exploring during your lab session. To remove the configuration created in this lab and stop the Lightspeed service, run:
 
 [source,bash,role="execute"]
 ----
-oc delete olsconfig cluster
+oc delete olsconfig cluster --ignore-not-found
 ----
 
 OpenShift Lightspeed provides AI-assisted operations directly in the console. By enabling natural language interactions, it helps administrators and developers quickly reduce the initial learning curve in OpenShift and be more productive by reducing time-to-resolution for common issues.
 
-In this module, you:
+In this lab, you:
 
 * Verified the OpenShift Lightspeed operator installation
 * Created an OLSConfig to connect to Azure OpenAI
